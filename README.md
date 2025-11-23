@@ -3,10 +3,8 @@ API for displaying messages to the player. GameText analogue
 
 ## Required packages:
 1. [ModSharp](https://github.com/Kxnrl/modsharp-public)
-2. [Extension GameEventManager](https://github.com/Kxnrl/modsharp-public/tree/master/Sharp.Extensions/GameEventManager/src)
 
 ## Installation:
-0. Install GameEventManager to `sharp/shared` folger
 1. Compile or copy MS-GameHUD to `sharp/modules/MS-GameHUD` folger
 2. Compile or copy MS-GameHUD-Shared to `sharp/shared/MS-GameHUD-Shared` folger
 3. Restart server

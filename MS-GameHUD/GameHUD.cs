@@ -1,20 +1,18 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using MS_GameHUD_Shared;
-using Sharp.Extensions.GameEventManager;
 using Sharp.Shared;
-using Sharp.Shared.Abstractions;
 using Sharp.Shared.Enums;
 using Sharp.Shared.GameEntities;
+using Sharp.Shared.HookParams;
+using Sharp.Shared.Listeners;
 using Sharp.Shared.Managers;
 using Sharp.Shared.Objects;
-using Sharp.Shared.Types;
 using Sharp.Shared.Units;
 using static MS_GameHUD_Shared.IGameHUDAPI;
 
 namespace MS_GameHUD
 {
-    public class GameHUD: IModSharpModule, IGameHUDAPI
+    public class GameHUD: IModSharpModule, IGameHUDAPI, IClientListener, IEventListener
     {
         public string DisplayName => "GameHUD";
         public string DisplayAuthor => "DarkerZ[RUS]";
@@ -25,24 +23,21 @@ namespace MS_GameHUD
             _modSharp = sharedSystem.GetModSharp();
             _entityManager = sharedSystem.GetEntityManager();
             _transmits = sharedSystem.GetTransmitManager();
-
-            var services = new ServiceCollection();
-            services.AddSingleton(sharedSystem);
-            services.AddGameEventManager();
-            _provider = services.BuildServiceProvider();
-            _gameEventManager = _provider.GetRequiredService<IGameEventManager>();
+            _clientManager = sharedSystem.GetClientManager();
+            _eventManager = sharedSystem.GetEventManager();
+            _hooks = sharedSystem.GetHookManager();
         }
         private readonly ISharpModuleManager _modules;
         private readonly IConVarManager _convars;
         public static IModSharp? _modSharp;
         public static IEntityManager? _entityManager;
         public static ITransmitManager? _transmits;
-        private readonly IServiceProvider _provider;
-        private readonly IGameEventManager _gameEventManager;
-
+        private readonly IClientManager _clientManager;
+        private readonly IEventManager _eventManager;
+        private readonly IHookManager _hooks;
 
         public static bool g_bMethod = false;
-        public static HUD[] g_HUD = new HUD[65];
+        public static HUD[] g_HUD = new HUD[PlayerSlot.MaxPlayerCount];
         private IConVar? g_cvar_method;
 
         public bool Init()
@@ -51,12 +46,13 @@ namespace MS_GameHUD
             g_cvar_method = _convars.CreateConVar("ms_gamehud_method", false, "true - point_orient, false - teleport", ConVarFlags.Notify);
             if (g_cvar_method != null) _convars.InstallChangeHook(g_cvar_method, OnCvarMethodChanged);
 
-            _provider.LoadAllSharpExtensions();
-            _gameEventManager.HookEvent("player_connect_full", OnPlayerConnectFull);
-            _gameEventManager.HookEvent("player_disconnect", OnPlayerDisconnect);
-            _gameEventManager.HookEvent("player_spawn", OnPlayerSpawn);
-            _gameEventManager.HookEvent("player_death", OnPlayerDeath);
-            _gameEventManager.HookEvent("round_start", OnRoundStart);
+            _clientManager.InstallClientListener(this);
+
+            _hooks.PlayerSpawnPost.InstallForward(OnPlayerSpawn);
+            _hooks.PlayerKilledPre.InstallForward(OnPlayerKilled);
+
+            _eventManager.InstallEventListener(this);
+            _eventManager.HookEvent("round_start");
 
             return true;
         }
@@ -73,7 +69,12 @@ namespace MS_GameHUD
 
         public void Shutdown()
         {
-            _provider.ShutdownAllSharpExtensions();
+            _clientManager.RemoveClientListener(this);
+
+            _hooks.PlayerSpawnPost.RemoveForward(OnPlayerSpawn);
+            _hooks.PlayerKilledPre.RemoveForward(OnPlayerKilled);
+
+            _eventManager.RemoveEventListener(this);
 
             if (g_cvar_method != null) _convars.RemoveChangeHook(g_cvar_method, OnCvarMethodChanged);
 
@@ -84,51 +85,43 @@ namespace MS_GameHUD
             }
         }
 
-        private HookReturnValue<bool> OnPlayerConnectFull(IGameEvent e, ref bool serverOnly)
+        public void OnClientPutInServer(IGameClient client)
         {
-            if (e.GetPlayerController("userid") is { } player)
+            if (client.GetPlayerController() is { } player)
             {
                 g_HUD[player.PlayerSlot].SetHUDPlayer(player);
             }
-            return new HookReturnValue<bool>();
         }
 
-        private HookReturnValue<bool> OnPlayerDisconnect(IGameEvent e, ref bool serverOnly)
+        public void OnClientDisconnected(IGameClient client)
         {
-            if (e.GetPlayerController("userid") is { } player)
+            if (client.GetPlayerController() is { } player)
             {
                 g_HUD[player.PlayerSlot].RemoveAllHUD();
                 g_HUD[player.PlayerSlot].RemovePointOrient();
                 g_HUD[player.PlayerSlot].SetHUDPlayer(null);
             }
-            return new HookReturnValue<bool>();
         }
 
-        private HookReturnValue<bool> OnPlayerSpawn(IGameEvent e, ref bool serverOnly)
+        private void OnPlayerSpawn(IPlayerSpawnForwardParams @params)
         {
-            if (e.GetPlayerController("userid") is { } player)
-            {
-                UpdateEvent(player);
-            }
-            return new HookReturnValue<bool>();
+            UpdateEvent(@params.Client);
         }
 
-        private HookReturnValue<bool> OnPlayerDeath(IGameEvent e, ref bool serverOnly)
+        private void OnPlayerKilled(IPlayerKilledForwardParams @params)
         {
-            if (e.GetPlayerController("userid") is { } player)
-            {
-                UpdateEvent(player);
-            }
-            return new HookReturnValue<bool>();
+            UpdateEvent(@params.Client);
         }
 
-        private HookReturnValue<bool> OnRoundStart(IGameEvent e, ref bool serverOnly)
+        public void FireGameEvent(IGameEvent @event)
         {
-            foreach (var hud in g_HUD)
+            if (@event.Name?.ToLowerInvariant() == "round_start")
             {
-                _ = _modSharp!.PushTimer(() => UpdateEvent(hud.GetHUDPlayer()), 1.0f);
+                foreach (var hud in g_HUD)
+                {
+                    _modSharp!.PushTimer(() => UpdateEvent(hud.GetHUDPlayer()?.GetGameClient()), 1.0f);
+                }
             }
-            return new HookReturnValue<bool>();
         }
 
         private void OnTick()
@@ -139,8 +132,7 @@ namespace MS_GameHUD
 
         private void OnTransmit()
         {
-            var controllers = GetControllersToTransmit().ToArray();
-            foreach (var player in controllers)
+            foreach (var player in _entityManager!.GetPlayerControllers().ToArray())
             {
                 for (int i = 0; i < g_HUD.Length; i++)
                 {
@@ -151,24 +143,11 @@ namespace MS_GameHUD
             }
         }
 
-        private IEnumerable<IPlayerController> GetControllersToTransmit()
+        private static void UpdateEvent(IGameClient? client)
         {
-            var max = new PlayerSlot((byte)_modSharp!.GetGlobals().MaxClients);
-
-            for (PlayerSlot slot = 0; slot <= max; slot++)
+            if (client != null && client.IsValid)
             {
-                if (_entityManager!.FindPlayerControllerBySlot(slot) is { } c)
-                {
-                    yield return c;
-                }
-            }
-        }
-
-        private static void UpdateEvent(IPlayerController? player)
-        {
-            if (player != null && player.IsValid())
-            {
-                foreach (var pair in g_HUD[player.PlayerSlot].Channel)
+                foreach (var pair in g_HUD[client.Slot].Channel)
                 {
                     if (!pair.Value.EmptyMessage())
                     {
@@ -218,5 +197,10 @@ namespace MS_GameHUD
             if (!Player.IsValid()) return null;
             return g_HUD[Player.PlayerSlot].CreateorGetChannel(channel)?.GetKeyValue(key);
         }
+
+        int IClientListener.ListenerVersion => IClientListener.ApiVersion;
+        int IClientListener.ListenerPriority => 0;
+        int IEventListener.ListenerVersion => IEventListener.ApiVersion;
+        int IEventListener.ListenerPriority => 0;
     }
 }

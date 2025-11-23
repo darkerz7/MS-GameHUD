@@ -5,12 +5,11 @@
     <RootNamespace>MS_GameHUD</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ModSharp.GameHUD.Shared" Version="1.0.1" />
-    <PackageReference Include="ModSharp.Sharp.Extensions.GameEventManager" Version="2.1.88" />
+    <PackageReference Include="ModSharp.GameHUD.Shared" Version="1.0.2" />
     <PackageReference Include="ModSharp.Sharp.Shared" Version="2.1.88" />
   </ItemGroup>
 

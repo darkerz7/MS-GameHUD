@@ -10,7 +10,7 @@
     <Description>Shared interface of GameHUD(GameText analogue) for ModSharp.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
