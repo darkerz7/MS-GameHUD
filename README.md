@@ -2,8 +2,8 @@
 API for displaying messages to the player. GameText analogue
 
 ## Required packages:
-[ModSharp](https://github.com/Kxnrl/modsharp-public)
-[Extension GameEventManager](https://github.com/Kxnrl/modsharp-public/tree/master/Sharp.Extensions/GameEventManager/src)
+1. [ModSharp](https://github.com/Kxnrl/modsharp-public)
+2. [Extension GameEventManager](https://github.com/Kxnrl/modsharp-public/tree/master/Sharp.Extensions/GameEventManager/src)
 
 ## Installation:
 0. Install GameEventManager to `sharp/shared` folger
@@ -62,3 +62,4 @@ public void MyExampleFunc(IPlayerController? player)
 }
 ```
 ### Screenshot
+![20251123094254_1](https://github.com/user-attachments/assets/cc1c4473-758b-4599-8919-442708cd87cf)
