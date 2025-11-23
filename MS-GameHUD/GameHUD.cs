@@ -24,7 +24,6 @@ namespace MS_GameHUD
             _convars = sharedSystem.GetConVarManager();
             _modSharp = sharedSystem.GetModSharp();
             _entityManager = sharedSystem.GetEntityManager();
-            _entities = sharedSystem.GetEntityManager();
             _transmits = sharedSystem.GetTransmitManager();
 
             var services = new ServiceCollection();
@@ -37,7 +36,6 @@ namespace MS_GameHUD
         private readonly IConVarManager _convars;
         public static IModSharp? _modSharp;
         public static IEntityManager? _entityManager;
-        private readonly IEntityManager _entities;
         public static ITransmitManager? _transmits;
         private readonly IServiceProvider _provider;
         private readonly IGameEventManager _gameEventManager;
@@ -159,7 +157,7 @@ namespace MS_GameHUD
 
             for (PlayerSlot slot = 0; slot <= max; slot++)
             {
-                if (_entities.FindPlayerControllerBySlot(slot) is { } c)
+                if (_entityManager!.FindPlayerControllerBySlot(slot) is { } c)
                 {
                     yield return c;
                 }
