@@ -9,12 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ModSharp.GameHUD.Shared" Version="1.0.1" />
     <PackageReference Include="ModSharp.Sharp.Extensions.GameEventManager" Version="2.1.88" />
     <PackageReference Include="ModSharp.Sharp.Shared" Version="2.1.88" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\MS-GameHUD-Shared\MS-GameHUD-Shared.csproj" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
@@ -27,6 +24,12 @@
 	  
 	  <Exec Command="if not exist $(SolutionDir)build\shared mkdir $(SolutionDir)build\shared" />
 	  <Exec Command="if not exist $(SolutionDir)build\shared\MS-GameHUD-Shared mkdir $(SolutionDir)build\shared\MS-GameHUD-Shared" />
+
+	  <ItemGroup>
+		  <GameHUD_Shared_Dll Include="$(NuGetPackageRoot)\modsharp.gamehud.shared\$(PackageVersion)\lib\net10.0\**\*.dll" />
+	  </ItemGroup>
+	  <Copy SourceFiles="@(GameHUD_Shared_Dll)" DestinationFolder="$(TargetDir)" />
+
 	  <Exec Command="copy /Y $(TargetDir)MS-GameHUD-Shared.dll $(SolutionDir)build\shared\MS-GameHUD-Shared\MS-GameHUD-Shared.dll" />
   </Target>
 
