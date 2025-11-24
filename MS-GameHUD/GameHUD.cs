@@ -138,7 +138,7 @@ namespace MS_GameHUD
                 {
                     if (player.PlayerSlot != i)
                         foreach (var channel in g_HUD[i].Channel)
-                            if (channel.Value.WTTransmitValid()) _transmits!.SetEntityState(channel.Value.WTGetIndex(), player.Index, true, -1);
+                            if (channel.Value.WTTransmitValid()) _transmits!.SetEntityState(channel.Value.WTGetIndex(), player.Index, false, -1);
                 }
             }
         }
