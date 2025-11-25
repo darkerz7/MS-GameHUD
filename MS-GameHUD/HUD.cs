@@ -37,7 +37,7 @@ namespace MS_GameHUD
                 entOrient.DispatchSpawn();
 
                 Vector vecPos = pawn!.GetAbsOrigin() with { Z = pawn.GetAbsOrigin().Z + pawn.ViewOffset.Z };
-                entOrient.Teleport(vecPos, null, null);
+                entOrient.SetAbsOrigin(vecPos);
                 entOrient.AcceptInput("SetParent", pawn, null, "!activator");
                 entOrient.AcceptInput("SetTarget", pawn, null, "!activator");
                 //entOrient.AcceptInput("SetParentAttachmentMaintainOffset", pawn, null, "look_straight_ahead_stand");

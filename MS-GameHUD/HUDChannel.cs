@@ -125,13 +125,15 @@ namespace MS_GameHUD
                 {
                     entity.AcceptInput("SetParent", GameHUD.g_HUD[HUDPlayer.PlayerSlot].GetPointOrient(), null, "!activator");
                     GetPositionOrient();
-                    entity.Teleport(CurrentPosition, CurrentAngle, null);
+                    entity.SetAbsOrigin(CurrentPosition);
+                    entity.SetAbsAngles(CurrentAngle);
                 }
                 else
                 {
                     entity.AcceptInput("SetParent", pawn, null, "!activator");
                     GetPositionTeleport();
-                    entity.Teleport(CurrentPosition, CurrentAngle, null);
+                    entity.SetAbsOrigin(CurrentPosition);
+                    entity.SetAbsAngles(CurrentAngle);
                 }
 
                 WorldText = entity;
@@ -147,7 +149,8 @@ namespace MS_GameHUD
         {
             if (!WTIsValid() || EmptyMessage()) return;
             GetPositionTeleport();
-            WorldText!.Teleport(CurrentPosition, CurrentAngle, null);
+            WorldText!.SetAbsOrigin(CurrentPosition);
+            WorldText!.SetAbsAngles(CurrentAngle);
         }
 
         public void SetKeyValue(string key, string value)
@@ -231,7 +234,8 @@ namespace MS_GameHUD
                 Position = vec;
                 if (GameHUD.g_bMethod) GetPositionOrient();
                 else GetPositionTeleport();
-                WorldText!.Teleport(CurrentPosition, CurrentAngle, null);
+                WorldText!.SetAbsOrigin(CurrentPosition);
+                WorldText!.SetAbsAngles(CurrentAngle);
             }
         }
 
@@ -345,19 +349,12 @@ namespace MS_GameHUD
 
         static void AngleVectors(Vector angles, out Vector forward, out Vector right, out Vector up)
         {
-            float angle = angles.Y * (MathF.PI * 2 / 360);
-            float sy = MathF.Sin(angle);
-            float cy = MathF.Cos(angle);
-            angle = angles.X * (MathF.PI * 2 / 360);
-            float sp = MathF.Sin(angle);
-            float cp = MathF.Cos(angle);
-            angle = angles.Z * (MathF.PI * 2 / 360);
-            float sr = MathF.Sin(angle);
-            float cr = MathF.Cos(angle);
+            (float sy, float cy) = MathF.SinCos(angles.Y * MathF.PI / 180.0f);
+            (float sp, float cp) = MathF.SinCos(angles.X * MathF.PI / 180.0f);
 
             forward = new(cp * cy, cp * sy, -sp);
-            right = new((-1 * sr * sp * cy) + (-1 * cr * -sy), (-1 * sr * sp * sy) + (-1 * cr * cy), -1 * sr * cp);
-            up = new((cr * sp * cy) + (-sr * -sy), (cr * sp * sy) + (-sr * cy), cr * cp);
+            right = new(sy, -cy, 0);
+            up = new(sp * cy, sp * sy, cp);
         }
 
         void OnTimer()

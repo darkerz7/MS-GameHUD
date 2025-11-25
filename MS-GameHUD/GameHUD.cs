@@ -46,6 +46,8 @@ namespace MS_GameHUD
             g_cvar_method = _convars.CreateConVar("ms_gamehud_method", false, "true - point_orient, false - teleport", ConVarFlags.Notify);
             if (g_cvar_method != null) _convars.InstallChangeHook(g_cvar_method, OnCvarMethodChanged);
 
+            _modSharp!.InstallGameFrameHook(null, OnGameFramePost);
+
             _clientManager.InstallClientListener(this);
 
             _hooks.PlayerSpawnPost.InstallForward(OnPlayerSpawn);
@@ -57,18 +59,17 @@ namespace MS_GameHUD
             return true;
         }
 
-        
-
         public void PostInit()
         {
             _modules.RegisterSharpModuleInterface<IGameHUDAPI>(this, IGameHUDAPI.Identity, this);
 
-            _modSharp!.PushTimer(OnTick, 0.02, GameTimerFlags.Repeatable);
             _modSharp!.PushTimer(OnTransmit, 0.1, GameTimerFlags.Repeatable);
         }
 
         public void Shutdown()
         {
+            _modSharp!.RemoveGameFrameHook(null, OnGameFramePost);
+
             _clientManager.RemoveClientListener(this);
 
             _hooks.PlayerSpawnPost.RemoveForward(OnPlayerSpawn);
@@ -124,7 +125,7 @@ namespace MS_GameHUD
             }
         }
 
-        private void OnTick()
+        private void OnGameFramePost(bool simulating, bool firstTick, bool lastTick)
         {
             if (g_bMethod) return;
             foreach (var hud in g_HUD) hud.ShowAllHUD();
