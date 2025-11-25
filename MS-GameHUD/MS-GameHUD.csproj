@@ -6,10 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Version>1.0.3</Version>
+	<GameHUD_Shared_Version>1.0.2</GameHUD_Shared_Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ModSharp.GameHUD.Shared" Version="1.0.2" />
+    <PackageReference Include="ModSharp.GameHUD.Shared" Version="$(GameHUD_Shared_Version)" />
     <PackageReference Include="ModSharp.Sharp.Shared" Version="2.1.88" />
   </ItemGroup>
 
@@ -25,7 +26,7 @@
 	  <Exec Command="if not exist $(SolutionDir)build\shared\MS-GameHUD-Shared mkdir $(SolutionDir)build\shared\MS-GameHUD-Shared" />
 
 	  <ItemGroup>
-		  <GameHUD_Shared_Dll Include="$(NuGetPackageRoot)\modsharp.gamehud.shared\$(PackageVersion)\lib\net10.0\**\*.dll" />
+		  <GameHUD_Shared_Dll Include="$(NuGetPackageRoot)\modsharp.gamehud.shared\$(GameHUD_Shared_Version)\lib\net10.0\**\*.dll" />
 	  </ItemGroup>
 	  <Copy SourceFiles="@(GameHUD_Shared_Dll)" DestinationFolder="$(TargetDir)" />
 
