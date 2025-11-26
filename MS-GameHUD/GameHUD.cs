@@ -12,7 +12,7 @@ using static MS_GameHUD_Shared.IGameHUDAPI;
 
 namespace MS_GameHUD
 {
-    public class GameHUD: IModSharpModule, IGameHUDAPI, IClientListener, IEventListener
+    public class GameHUD: IModSharpModule, IGameHUDAPI, IGameListener, IClientListener
     {
         public string DisplayName => "GameHUD";
         public string DisplayAuthor => "DarkerZ[RUS]";
@@ -24,7 +24,6 @@ namespace MS_GameHUD
             _entityManager = sharedSystem.GetEntityManager();
             _transmits = sharedSystem.GetTransmitManager();
             _clientManager = sharedSystem.GetClientManager();
-            _eventManager = sharedSystem.GetEventManager();
             _hooks = sharedSystem.GetHookManager();
         }
         private readonly ISharpModuleManager _modules;
@@ -33,7 +32,6 @@ namespace MS_GameHUD
         public static IEntityManager? _entityManager;
         public static ITransmitManager? _transmits;
         private readonly IClientManager _clientManager;
-        private readonly IEventManager _eventManager;
         private readonly IHookManager _hooks;
 
         public static bool g_bMethod = false;
@@ -46,15 +44,13 @@ namespace MS_GameHUD
             g_cvar_method = _convars.CreateConVar("ms_gamehud_method", false, "true - point_orient, false - teleport", ConVarFlags.Notify);
             if (g_cvar_method != null) _convars.InstallChangeHook(g_cvar_method, OnCvarMethodChanged);
 
+            _modSharp!.InstallGameListener(this);
             _modSharp!.InstallGameFrameHook(null, OnGameFramePost);
 
             _clientManager.InstallClientListener(this);
 
             _hooks.PlayerSpawnPost.InstallForward(OnPlayerSpawn);
             _hooks.PlayerKilledPre.InstallForward(OnPlayerKilled);
-
-            _eventManager.InstallEventListener(this);
-            _eventManager.HookEvent("round_start");
 
             return true;
         }
@@ -68,14 +64,13 @@ namespace MS_GameHUD
 
         public void Shutdown()
         {
+            _modSharp!.RemoveGameListener(this);
             _modSharp!.RemoveGameFrameHook(null, OnGameFramePost);
 
             _clientManager.RemoveClientListener(this);
 
             _hooks.PlayerSpawnPost.RemoveForward(OnPlayerSpawn);
             _hooks.PlayerKilledPre.RemoveForward(OnPlayerKilled);
-
-            _eventManager.RemoveEventListener(this);
 
             if (g_cvar_method != null) _convars.RemoveChangeHook(g_cvar_method, OnCvarMethodChanged);
 
@@ -114,14 +109,11 @@ namespace MS_GameHUD
             UpdateEvent(@params.Client);
         }
 
-        public void FireGameEvent(IGameEvent @event)
+        public void OnRoundRestarted()
         {
-            if (@event.Name?.ToLowerInvariant() == "round_start")
+            foreach (var hud in g_HUD)
             {
-                foreach (var hud in g_HUD)
-                {
-                    _modSharp!.PushTimer(() => UpdateEvent(hud.GetHUDPlayer()?.GetGameClient()), 1.0f);
-                }
+                _modSharp!.PushTimer(() => UpdateEvent(hud.GetHUDPlayer()?.GetGameClient()), 1.0f);
             }
         }
 
@@ -199,9 +191,9 @@ namespace MS_GameHUD
             return g_HUD[Player.PlayerSlot].CreateorGetChannel(channel)?.GetKeyValue(key);
         }
 
+        int IGameListener.ListenerVersion => IGameListener.ApiVersion;
+        int IGameListener.ListenerPriority => 0;
         int IClientListener.ListenerVersion => IClientListener.ApiVersion;
         int IClientListener.ListenerPriority => 0;
-        int IEventListener.ListenerVersion => IEventListener.ApiVersion;
-        int IEventListener.ListenerPriority => 0;
     }
 }
