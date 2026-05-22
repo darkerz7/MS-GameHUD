@@ -1,10 +1,11 @@
 ﻿using Sharp.Shared.GameEntities;
+using Sharp.Shared.Objects;
 using Sharp.Shared.Types;
 using static MS_GameHUD_Shared.IGameHUDAPI;
 
 namespace MS_GameHUD
 {
-    public class HUDChannel(IPlayerController player)
+    public class HUDChannel(IGameClient client)
     {
         Vector Position = new(0, 0, 7);
         Vector CurrentPosition = new();
@@ -23,7 +24,7 @@ namespace MS_GameHUD
         Guid? timer;
         IWorldText? WorldText;
         string Message = "";
-        IPlayerController HUDPlayer = player;
+        IGameClient HUDClient = client;
 
         public bool Show(string MessageText, float fTime = 1.0f)
         {
@@ -95,8 +96,7 @@ namespace MS_GameHUD
             WTRemove();
             WorldText = null;
 
-            if (HUDPlayer == null || !HUDPlayer.IsValid()) return false;
-            var pawn = HUDPlayer.GetPawn();
+            if (HUDClient == null || !HUDClient.IsValid || HUDClient.GetPlayerController() is not { } HUDPlayer || !HUDPlayer.IsValid() || HUDPlayer.GetPawn() is not { } pawn) return false;
 
             if (GameHUD.g_bMethod && !GameHUD.g_HUD[HUDPlayer.PlayerSlot].CreateOrGetPointOrient()) return false;
 
@@ -224,7 +224,7 @@ namespace MS_GameHUD
 
         bool IsValidChannel()
         {
-            return WTIsValid() && HUDPlayer != null && HUDPlayer.IsValid();
+            return WTIsValid() && HUDClient != null && HUDClient.IsValid;
         }
 
         void SetPosition(Vector vec)
@@ -319,21 +319,22 @@ namespace MS_GameHUD
 
         void GetPositionTeleport()
         {
-            Vector Angle = HUDPlayer.GetPawn()!.GetNetVar<Vector>("v_angle");
+            if (HUDClient.GetPlayerController() is not { } HUDPlayer || !HUDPlayer.IsValid() || HUDPlayer.GetPawn() is not { } pawn) return;
+            Vector Angle = pawn.GetNetVar<Vector>("v_angle");
             AngleVectors(Angle, out Vector vecForward, out Vector vecRight, out Vector vecUp);
 
-            CurrentPosition = HUDPlayer.GetPawn()!.GetAbsOrigin();
+            CurrentPosition = pawn.GetAbsOrigin();
             CurrentPosition += vecForward * Position.Z;
             CurrentPosition += vecRight * Position.X;
             CurrentPosition += vecUp * Position.Y;
-            CurrentPosition += new Vector(0, 0, HUDPlayer.GetPawn()!.ViewOffset.Z);
+            CurrentPosition += new Vector(0, 0, pawn.ViewOffset.Z);
 
             CurrentAngle.Y = Angle.Y + 270;
             CurrentAngle.Z = 90 - Angle.X;
         }
         void GetPositionOrient()
         {
-            IBaseEntity? pointorient = GameHUD.g_HUD[HUDPlayer.PlayerSlot].GetPointOrient();
+            IBaseEntity? pointorient = GameHUD.g_HUD[HUDClient.Slot].GetPointOrient();
             if (pointorient == null || !pointorient.IsValid()) return;
             Vector Angle = pointorient!.GetAbsAngles();
             AngleVectors(Angle, out Vector vecForward, out Vector vecRight, out Vector vecUp);

@@ -83,10 +83,7 @@ namespace MS_GameHUD
 
         public void OnClientPutInServer(IGameClient client)
         {
-            if (client.GetPlayerController() is { } player)
-            {
-                g_HUD[player.PlayerSlot].SetHUDPlayer(player);
-            }
+            g_HUD[client.Slot].SetHUDPlayer(client);
         }
 
         public void OnClientDisconnected(IGameClient client)
@@ -111,10 +108,10 @@ namespace MS_GameHUD
 
         public void OnRoundRestarted()
         {
-            foreach (var hud in g_HUD)
+            _modSharp!.PushTimer(() =>
             {
-                _modSharp!.PushTimer(() => UpdateEvent(hud.GetHUDPlayer()?.GetGameClient()), 1.0f);
-            }
+                foreach (var client in _clientManager.GetGameClients(true)) UpdateEvent(client);
+            }, 1.0f);
         }
 
         private void OnGameFramePost(bool simulating, bool firstTick, bool lastTick)

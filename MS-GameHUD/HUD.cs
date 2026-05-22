@@ -1,30 +1,30 @@
 ﻿using Sharp.Shared.GameEntities;
+using Sharp.Shared.Objects;
 using Sharp.Shared.Types;
 
 namespace MS_GameHUD
 {
     public class HUD
     {
-        IPlayerController? HUDPlayer;
+        IGameClient? HUDClient;
         public Dictionary<byte, HUDChannel> Channel = [];
         IBaseEntity? PointOrient;
 
-        public void SetHUDPlayer(IPlayerController? player)
+        public void SetHUDPlayer(IGameClient? client)
         {
-            HUDPlayer = player;
+            HUDClient = client;
         }
 
-        public IPlayerController? GetHUDPlayer()
+        public IGameClient? GetHUDPlayer()
         {
-            return HUDPlayer;
+            return HUDClient;
         }
 
         public bool CreateOrGetPointOrient()
         {
             if (PointOrient != null && PointOrient.IsValid()) return true;
 
-            if (HUDPlayer == null || !HUDPlayer.IsValid()) return false;
-            var pawn = HUDPlayer.GetPawn();
+            if (HUDClient == null || !HUDClient.IsValid || HUDClient.GetPlayerController() is not { } HUDPlayer || !HUDPlayer.IsValid() || HUDPlayer.GetPawn() is not { } pawn) return false;
 
             var kv = new Dictionary<string, KeyValuesVariantValueItem>
             {
@@ -62,7 +62,7 @@ namespace MS_GameHUD
 
         public HUDChannel? CreateorGetChannel(byte channel)
         {
-            if (HUDPlayer != null && HUDPlayer.IsValid() && (Channel.ContainsKey(channel) || Channel.TryAdd(channel, new HUDChannel(HUDPlayer)))) return Channel[channel];
+            if (HUDClient is { IsValid: true } && (Channel.ContainsKey(channel) || Channel.TryAdd(channel, new HUDChannel(HUDClient)))) return Channel[channel];
             return null;
         }
 
@@ -75,7 +75,7 @@ namespace MS_GameHUD
 
         public void ShowAllHUD()
         {
-            if (HUDPlayer != null && HUDPlayer.IsValid())
+            if (HUDClient is { IsValid: true })
                 foreach (var pair in Channel) pair.Value.ShowHUD();
         }
 
