@@ -86,14 +86,11 @@ namespace MS_GameHUD
             g_HUD[client.Slot].SetHUDPlayer(client);
         }
 
-        public void OnClientDisconnected(IGameClient client)
+        public void OnClientDisconnected(IGameClient client, NetworkDisconnectionReason reason)
         {
-            if (client.GetPlayerController() is { } player)
-            {
-                g_HUD[player.PlayerSlot].RemoveAllHUD();
-                g_HUD[player.PlayerSlot].RemovePointOrient();
-                g_HUD[player.PlayerSlot].SetHUDPlayer(null);
-            }
+            g_HUD[client.Slot].RemoveAllHUD();
+            g_HUD[client.Slot].RemovePointOrient();
+            g_HUD[client.Slot].SetHUDPlayer(null);
         }
 
         private void OnPlayerSpawn(IPlayerSpawnForwardParams @params)
